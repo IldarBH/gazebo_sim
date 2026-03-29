@@ -21,6 +21,8 @@ def generate_launch_description():
     model_sdf_file_arg = DeclareLaunchArgument(name='model_sdf', default_value='base_model.sdf', description='Path to the SDF model file')
     model_sdf_path = PathJoinSubstitution([this_pkg_path, 'models', LaunchConfiguration('model_sdf')])
 
+    spawn_world_arg = DeclareLaunchArgument(name='spawn_world', default_value='base_world', description='World name to spawn the model in')
+
     gz_sim_pkg_path = get_package_share_directory('ros_gz_sim')
     gz_sim_launch_path = PathJoinSubstitution([gz_sim_pkg_path, 'launch', 'gz_sim.launch.py'])
     gz_launch_action = IncludeLaunchDescription(
@@ -31,7 +33,7 @@ def generate_launch_description():
     gz_spawn_launch_path = PathJoinSubstitution([gz_sim_pkg_path, 'launch', 'gz_spawn_model.launch.py'])
     gz_spawn_action = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(gz_spawn_launch_path),
-        launch_arguments={'world': 'base_world',
+        launch_arguments={'world': LaunchConfiguration('spawn_world'),
                           'file': model_sdf_path, 
                           'entity_name': 'default_robot',
                           'z': '0.1'}.items(),
@@ -41,6 +43,7 @@ def generate_launch_description():
     ld.add_action(set_env_action)
     ld.add_action(world_sdf_file_arg)
     ld.add_action(model_sdf_file_arg)
+    ld.add_action(spawn_world_arg)
     ld.add_action(gz_launch_action)
     ld.add_action(gz_spawn_action)
     return ld
