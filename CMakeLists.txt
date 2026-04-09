@@ -7,9 +7,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 
 # Install launch files
 install(DIRECTORY 
@@ -18,5 +16,7 @@ install(DIRECTORY
   models
   DESTINATION share/${PROJECT_NAME}/
 )
+
+ament_python_install_package(${PROJECT_NAME})
 
 ament_package()

@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<robot name="default_robot">
+    <material name="blue"> <color rgba="0 0 1 1"/> </material>
+    <material name="red"> <color rgba="1 0 0 1"/> </material>
+    <material name="green"> <color rgba="0 1 0 1"/> </material>
+
+    <!-- Links -->
+    <!-- Base Link -->
+    <link name='base_link'/>
+    <link name='body'>
+        <inertial>
+            <mass value="5.0"/>
+            <inertia ixx="0.006208333" ixy="0" ixz="0" iyy="0.018708333" iyz="0" izz="0.020833333"/>
+        </inertial>
+        <visual>
+            <geometry>
+                <box size="0.2 0.1 0.07"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.2 0.1 0.07"/>
+            </geometry>
+        </collision>
+    </link>
+    <!-- Left Wheel -->
+    <link name='left_wheel'>
+        <inertial>
+            <mass value="0.5"/>
+            <inertia ixx="0.000169792" ixy="0" ixz="0" iyy="0.000169792" iyz="0" izz="0.00030625"/>
+        </inertial>
+        <visual>
+            <geometry>
+                <cylinder radius="0.035" length="0.02"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="0.035" length="0.02"/>
+            </geometry>
+        </collision>
+    </link>
+    <!-- Right Wheel -->
+    <link name='right_wheel'>
+        <inertial>
+            <mass value="0.5"/>
+            <inertia ixx="0.000169792" ixy="0" ixz="0" iyy="0.000169792" iyz="0" izz="0.00030625"/>
+        </inertial>
+        <visual>
+            <geometry>
+                <cylinder radius="0.035" length="0.02"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="0.035" length="0.02"/>
+            </geometry>
+        </collision>
+    </link>
+    <!-- Castor Wheel -->
+    <link name='caster_wheel'>
+        <inertial>
+            <mass value="0.25"/>
+            <inertia ixx="0.0001225" ixy="0" ixz="0" iyy="0.0001225" iyz="0" izz="0.0001225"/>
+        </inertial>
+        <visual>
+            <geometry>
+                <sphere radius="0.035"/>
+            </geometry>
+            <material name="green"/>
+        </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.035"/>
+            </geometry>
+        </collision>
+    </link>
+    <!-- Lidar Frame -->
+    <link name="lidar_frame">
+        <visual>
+            <geometry>
+                <cylinder radius="0.03" length="0.04"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="0.03" length="0.04"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1"/>
+            <inertia ixx="3.583333e-05" ixy="0.0" ixz="0.0" iyy="3.583333e-05" iyz="0.0" izz="4.5e-05"/>
+        </inertial>
+    </link>
+
+    <!-- Joints -->
+    <!-- Base to Body -->
+    <joint name="base_to_body_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="body"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+    <!-- Body to Left Wheel -->
+    <joint name="left_wheel_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="left_wheel"/>
+        <origin xyz="-0.05 0.06 -0.035" rpy="-1.5707 0 0"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+    <!-- Body to Right Wheel -->
+    <joint name="right_wheel_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="right_wheel"/>
+        <origin xyz="-0.05 -0.06 -0.035" rpy="1.5707 0 0"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+    <!-- Body to Castor Wheel -->
+    <joint name="caster_wheel_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="caster_wheel"/>
+        <origin xyz="0.06 0 -0.035" rpy="0 0 0"/>
+    </joint>
+    <!-- Body to Lidar Frame -->
+    <joint name="lidar_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="lidar_frame"/>
+        <origin xyz="0 0 0.055" rpy="0 0 0"/>
+    </joint>
+
+    <gazebo>
+        <plugin
+            filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+        </plugin>
+        <plugin
+            filename="gz-sim-pose-publisher-system"
+            name="gz::sim::systems::PosePublisher">
+            <publish_link_pose>true</publish_link_pose>
+            <use_static_publisher>true</use_static_publisher>
+            <publish_visual_pose>true</publish_visual_pose>
+            <publish_collision_pose>false</publish_collision_pose>
+            <publish_nested_model_pose>false</publish_nested_model_pose>
+        </plugin>
+        <plugin
+            filename="gz-sim-sensors-system"
+            name="gz::sim::systems::Sensors">
+            <render_engine>ogre2</render_engine>
+        </plugin>
+    </gazebo>
+
+    <gazebo reference="lidar_frame">
+        <sensor name="lidar" type="gpu_lidar">
+            <pose>0 0 0 0 0 0</pose>
+            <topic>/sensors/lidar</topic>
+            <update_rate>10</update_rate>
+            <lidar>
+                <scan>
+                    <horizontal>
+                        <samples>640</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-3.14159</min_angle>
+                        <max_angle>3.14159</max_angle>
+                    </horizontal>
+                </scan>
+                <range>
+                    <min>0.1</min>
+                    <max>10.0</max>
+                    <resolution>0.01</resolution>
+                </range>
+            </lidar>
+            <always_on>1</always_on>
+            <visualize>true</visualize>
+        </sensor>
+    </gazebo>
+</robot>
