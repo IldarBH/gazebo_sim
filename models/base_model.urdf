@@ -96,6 +96,18 @@
             <inertia ixx="3.583333e-05" ixy="0.0" ixz="0.0" iyy="3.583333e-05" iyz="0.0" izz="4.5e-05"/>
         </inertial>
     </link>
+    <!-- IMU Frame -->
+    <link name="imu_frame">
+        <visual>
+            <geometry>
+                <box size="0.01 0.01 0.01"/>
+            </geometry>
+        </visual>
+        <inertial>
+            <mass value="0.01"/>
+            <inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/>
+        </inertial>
+    </link>
 
     <!-- Joints -->
     <!-- Base to Body -->
@@ -104,58 +116,79 @@
         <child link="body"/>
         <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
-    <!-- Body to Left Wheel -->
+    <!-- Base to Left Wheel -->
     <joint name="left_wheel_joint" type="continuous">
         <parent link="base_link"/>
         <child link="left_wheel"/>
         <origin xyz="-0.05 0.06 -0.035" rpy="-1.5707 0 0"/>
         <axis xyz="0 0 1"/>
     </joint>
-    <!-- Body to Right Wheel -->
+    <!-- Base to Right Wheel -->
     <joint name="right_wheel_joint" type="continuous">
         <parent link="base_link"/>
         <child link="right_wheel"/>
         <origin xyz="-0.05 -0.06 -0.035" rpy="1.5707 0 0"/>
         <axis xyz="0 0 1"/>
     </joint>
-    <!-- Body to Castor Wheel -->
+    <!-- Base to Castor Wheel -->
     <joint name="caster_wheel_joint" type="fixed">
         <parent link="base_link"/>
         <child link="caster_wheel"/>
         <origin xyz="0.06 0 -0.035" rpy="0 0 0"/>
     </joint>
-    <!-- Body to Lidar Frame -->
+    <!-- Base to Lidar Frame -->
     <joint name="lidar_joint" type="fixed">
         <parent link="base_link"/>
         <child link="lidar_frame"/>
         <origin xyz="0 0 0.055" rpy="0 0 0"/>
     </joint>
+    <!-- Base to IMU Frame -->
+    <joint name="imu_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="imu_frame"/>
+        <origin xyz="0 0 0.04" rpy="0 0 0"/>
+    </joint>
 
     <gazebo>
+        <!-- Used for left wheel control -->
+        <plugin
+            filename="gz-sim-joint-controller-system"
+            name="gz::sim::systems::JointController">
+            <joint_name>left_wheel_joint</joint_name>
+            <initial_velocity>0.0</initial_velocity>
+            <topic>/left_wheel_cmd</topic>
+        </plugin>
+        <!-- Used for right wheel control -->
+        <plugin
+            filename="gz-sim-joint-controller-system"
+            name="gz::sim::systems::JointController">
+            <joint_name>right_wheel_joint</joint_name>
+            <initial_velocity>0.0</initial_velocity>
+            <topic>/right_wheel_cmd</topic>
+        </plugin>
+        <!-- Used for joint state publishing -->
         <plugin
             filename="gz-sim-joint-state-publisher-system"
             name="gz::sim::systems::JointStatePublisher">
+            <topic>/joint_states</topic>
+            <update_rate>10</update_rate>
         </plugin>
-        <plugin
-            filename="gz-sim-pose-publisher-system"
-            name="gz::sim::systems::PosePublisher">
-            <publish_link_pose>true</publish_link_pose>
-            <use_static_publisher>true</use_static_publisher>
-            <publish_visual_pose>true</publish_visual_pose>
-            <publish_collision_pose>false</publish_collision_pose>
-            <publish_nested_model_pose>false</publish_nested_model_pose>
-        </plugin>
+        <!-- Used for Lidar sensor -->
         <plugin
             filename="gz-sim-sensors-system"
             name="gz::sim::systems::Sensors">
-            <render_engine>ogre2</render_engine>
+        </plugin>
+        <!-- Used for IMU sensor -->
+        <plugin
+            filename="gz-sim-imu-system"
+            name="gz::sim::systems::Imu">
         </plugin>
     </gazebo>
-
+    <!-- Lidar Sensor -->
     <gazebo reference="lidar_frame">
         <sensor name="lidar" type="gpu_lidar">
-            <pose>0 0 0 0 0 0</pose>
             <topic>/sensors/lidar</topic>
+            <frame_id>lidar_frame</frame_id>
             <update_rate>10</update_rate>
             <lidar>
                 <scan>
@@ -171,9 +204,83 @@
                     <max>10.0</max>
                     <resolution>0.01</resolution>
                 </range>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.02</stddev> 
+                </noise>
             </lidar>
             <always_on>1</always_on>
             <visualize>true</visualize>
         </sensor>
+    </gazebo>
+    <!-- IMU Sensor -->
+    <gazebo reference="imu_frame">
+        <sensor name="imu_sensor" type="imu">
+            <topic>/sensors/imu</topic>
+            <frame_id>imu_frame</frame_id>
+            <update_rate>100</update_rate>\
+            <imu>
+                <angular_velocity>
+                    <x>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <stddev>0.002</stddev> 
+                            <bias_mean>0.0000075</bias_mean>
+                            <bias_stddev>0.0000008</bias_stddev>
+                        </noise>
+                    </x>
+                    <y>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <stddev>0.002</stddev> 
+                            <bias_mean>0.0000075</bias_mean>
+                            <bias_stddev>0.0000008</bias_stddev>
+                        </noise>
+                    </y>
+                    <z>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <stddev>0.002</stddev> 
+                            <bias_mean>0.0000075</bias_mean>
+                            <bias_stddev>0.0000008</bias_stddev>
+                        </noise>
+                    </z>
+                </angular_velocity>
+                <linear_acceleration>
+                    <x>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <stddev>0.017</stddev>
+                            <bias_mean>0.1</bias_mean>
+                            <bias_stddev>0.001</bias_stddev>
+                        </noise>
+                    </x>
+                    <y>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <stddev>0.017</stddev>
+                            <bias_mean>0.1</bias_mean>
+                            <bias_stddev>0.001</bias_stddev>
+                        </noise>
+                    </y>
+                    <z>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <stddev>0.017</stddev>
+                            <bias_mean>0.1</bias_mean>
+                            <bias_stddev>0.001</bias_stddev>
+                        </noise>
+                    </z>
+                </linear_acceleration>
+            </imu>
+            <always_on>1</always_on>
+            <visualize>true</visualize>
+        </sensor>
+    </gazebo>
+
+    <gazebo reference="caster_wheel">
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
     </gazebo>
 </robot>
